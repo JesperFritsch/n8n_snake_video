@@ -6,6 +6,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
       - ./n8n_output:/root/.n8n-files
+      - /snake_vid_flow.json:/home/node/snake_vid_flow.json
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
@@ -13,5 +14,12 @@ services:
       - N8N_USER_FOLDER=/home/node/
       - NODES_EXCLUDE=[]
   
+    command: > 
+      sh -c "
+      n8n import:workflow --input=/home/node/snake_vid_flow.json || true;
+      n8n
+      "
+
+
 volumes:
   n8n_data:

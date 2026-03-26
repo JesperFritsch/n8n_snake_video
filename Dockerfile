@@ -36,9 +36,9 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
 RUN wget -O /usr/local/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 \
     && chmod +x /usr/local/bin/cloudflared
 
+
 RUN python -m pip install --break-system-packages git+https://github.com/JesperFritsch/snake_sim.git --force-reinstall
 
 RUN npm install -g n8n
 
 EXPOSE 5678
-CMD ["n8n"]
