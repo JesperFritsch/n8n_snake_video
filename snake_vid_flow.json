@@ -1,0 +1,819 @@
+{
+  "name": "snake_vid_flow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        -192
+      ],
+      "id": "eed9ff71-9333-4a09-ae70-3a813cbe33ae",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cd3f4146-f3b6-4fa3-a1fc-906c7f3e2219",
+              "name": "=video_url",
+              "value": "={{ $json.cloudflare_url }}/{{ $('run_args').item.json.final_video_name }}",
+              "type": "string"
+            },
+            {
+              "id": "0d693853-3906-456a-9e3f-176b4c3ef122",
+              "name": "caption",
+              "value": "Testing automated posts",
+              "type": "string"
+            },
+            {
+              "id": "939ec740-649b-4573-b5ee-2dbadb160c26",
+              "name": "node",
+              "value": "17841465971071637",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        80
+      ],
+      "id": "a5974b2d-9e1b-460a-becd-51b790ab16b1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "56b09789-b6df-40ed-9436-65561ab4be47",
+              "name": "store_dir",
+              "value": "/root/.n8n-files",
+              "type": "string"
+            },
+            {
+              "id": "5e865f85-e5b8-443e-af95-89334ee4e7da",
+              "name": "run_file",
+              "value": "snake_run.run_proto",
+              "type": "string"
+            },
+            {
+              "id": "23eb4e4c-07a4-49fe-9b09-76afb35f21aa",
+              "name": "nr_of_steps",
+              "value": "={{ $json.map_info[$json.snake_map].height == 32 || $json.map_info[$json.snake_map].width == 32 ? 2040 : 2640 }}",
+              "type": "number"
+            },
+            {
+              "id": "51d87872-591e-4680-8d6b-52b45dcf3cc3",
+              "name": "steps_per_sec",
+              "value": "={{ $json.map_info[$json.snake_map].height == 32 || $json.map_info[$json.snake_map].width == 32 ? 17 : 22 }}",
+              "type": "number"
+            },
+            {
+              "id": "235a5049-6903-4e53-b1a8-592efe505574",
+              "name": "fps",
+              "value": 30,
+              "type": "number"
+            },
+            {
+              "id": "fcdef93a-8dd7-4ce9-9c1f-b10f91af49e8",
+              "name": "video_name",
+              "value": "snake_video.mp4",
+              "type": "string"
+            },
+            {
+              "id": "00711450-b338-41cb-959b-61ab2904d44c",
+              "name": "snake_map",
+              "value": "={{ $json.snake_map }}",
+              "type": "string"
+            },
+            {
+              "id": "6a8f7570-34a7-4286-a250-4ddf767e242d",
+              "name": "final_video_name",
+              "value": "snake_ig_video.mp4",
+              "type": "string"
+            },
+            {
+              "id": "3749d724-3aeb-44f1-93f9-f97986a0017f",
+              "name": "nr_of_snakes",
+              "value": "={{Math.random() < 0.75 ? 1 : 5 + Math.round(Math.random() * 10)}}",
+              "type": "number"
+            },
+            {
+              "id": "cdf7e449-926e-425f-b146-43576070ce8a",
+              "name": "snake_food",
+              "value": "={{ Math.round($json.map_info[$json.snake_map].height * $json.map_info[$json.snake_map].width * (0.007 + (Math.random() * 0.008))) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        -192
+      ],
+      "id": "4c5f60af-6f58-450c-89c6-a66411c6a758",
+      "name": "run_args"
+    },
+    {
+      "parameters": {
+        "command": "=snake-sim compute --record-dir {{ $json.store_dir }} --record-file {{ $json.run_file }} --no-render --snake-count {{ $json.nr_of_snakes }} --food {{ $json.snake_food }} --food-decay 0 {{ $json.nr_of_snakes == 1 ? `--map ${$json.snake_map}` : '' }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -192
+      ],
+      "id": "4e7a7deb-a243-4fad-aa68-9ac208ccf337",
+      "name": "Compute run"
+    },
+    {
+      "parameters": {
+        "command": "=python -m snake_sim.render.export_run_to_video {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.run_file }} {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.video_name }} --steps-per-second {{ $('run_args').item.json.steps_per_sec }} --start-step {{ $json.video_start_step }} --end-step {{ $json.video_end_step }} --fps {{ $('run_args').item.json.fps }} --max-size 640 --codec libx264 --scale-backend cpu {{ $('run_args').item.json.nr_of_snakes > 1 ? '' : '--random-colors'}}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -192
+      ],
+      "id": "2d37f696-2bed-4dca-906e-2c58b54a727f",
+      "name": "Create run video"
+    },
+    {
+      "parameters": {
+        "command": "=python -m snake_sim.analyze.scripts.run_analyzer {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.run_file }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -192
+      ],
+      "id": "360f2183-df9f-437e-8d70-51fcfd773afb",
+      "name": "Analyze run"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = JSON.parse($input.first().json.stdout);\nconst analysis = Array.isArray(parsed) ? parsed[0] : parsed;\n\nconst nrOfSteps = Number($('run_args').first().json.nr_of_steps);\nconst snakeIds = (analysis.snake_ids ?? []).map(String);\nconst fatalStepsObj = analysis.fatal_steps ?? {};\nconst enteredSeparateArea = analysis.entered_separate_area ?? {};\nconst tailVisiblePhases = analysis.tail_visible_phases ?? {};\n\nlet video_end_step;\n\n// Multiple snakes\nif (snakeIds.length > 1) {\n  const fatalSteps = Object.values(fatalStepsObj)\n    .map(Number)\n    .filter(Number.isFinite)\n    .sort((a, b) => a - b);\n\n  if (fatalSteps.length >= snakeIds.length) {\n    // All snakes died -> one snake left after the second highest fatal step\n    video_end_step = fatalSteps[fatalSteps.length - 2] + 50;\n  } else if (fatalSteps.length > 0) {\n    // Last snake never died -> one snake left after the highest fatal step\n    video_end_step = fatalSteps[fatalSteps.length - 1] + 50;\n  } else {\n    // No deaths at all -> fallback\n    video_end_step = Number(analysis.final_step_idx ?? 0);\n  }\n} else {\n  // Single snake\n  const snakeId = snakeIds[0] ?? \"0\";\n  const lastEnteredSeparateAreaStep = Math.max(\n    -Infinity,\n    ...(enteredSeparateArea[snakeId] ?? []).map(Number).filter(Number.isFinite)\n  );\n\n  const phases = tailVisiblePhases[snakeId] ?? [];\n\n  const matchingPhase = phases.find(\n    (p) =>\n      p.tail_visible === true &&\n      Number.isFinite(Number(p.start_step_idx)) &&\n      Number(p.start_step_idx) > lastEnteredSeparateAreaStep\n  );\n\n  if (matchingPhase) {\n    video_end_step = Number(matchingPhase.start_step_idx) + 50;\n  } else {\n    // Fallback if no such phase exists\n    video_end_step = Number(analysis.final_step_idx ?? 0);\n  }\n}\n\nlet video_start_step = video_end_step - nrOfSteps;\nif (video_start_step < 0) {\n  video_start_step = 0;\n  // if start steps is 0 then we should not finish the video at the calculated end step\n  video_end_step = nrOfSteps;\n}\n\n\nreturn [\n  {\n    json: {\n      ...analysis,\n      video_start_step,\n      video_end_step,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -192
+      ],
+      "id": "5d04b119-ed0f-421d-ab57-7ccca9625a5f",
+      "name": "Parse run analysis"
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -y \\\n  -i {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.video_name }} \\\n  -filter_complex \"[0:v]fps=30,scale=1000:1000:force_original_aspect_ratio=decrease[fg];color=c=black:s=1000x1000:r=30,format=rgba,geq=r='0':g='0':b='0':a='if(lt(X,40)*lt(Y,40),if(lte(hypot(X-40,Y-40),40),255,0),if(gt(X,W-41)*lt(Y,40),if(lte(hypot(X-(W-41),Y-40),40),255,0),if(lt(X,40)*gt(Y,H-41),if(lte(hypot(X-40,Y-(H-41)),40),255,0),if(gt(X,W-41)*gt(Y,H-41),if(lte(hypot(X-(W-41),Y-(H-41)),40),255,0),255))))',pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black@0.0,boxblur=luma_radius=0:luma_power=0:chroma_radius=0:chroma_power=0:alpha_radius=35:alpha_power=1[halo];color=c=0x2b2b2b:s=1080x1920:r=30[bg];[bg][halo]overlay=0:0:shortest=1[bg2];[bg2][fg]overlay=(W-w)/2:(H-h)/2:shortest=1,format=yuv420p[v]\" \\\n  -map \"[v]\" \\\n  -an \\\n  -c:v libx264 \\\n  -profile:v high \\\n  -level:v 4.1 \\\n  -crf 18 \\\n  -preset medium \\\n  {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.final_video_name }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -192
+      ],
+      "id": "8b942061-9179-4d9e-a11d-3f8677f46bac",
+      "name": "Make IG video"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "=  {{ $json.node }}",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "video_url",
+                "value": "={{ $json.video_url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $json.caption }}"
+              },
+              {
+                "name": "node",
+                "value": "={{ $json.node }}"
+              },
+              {
+                "name": "media_type",
+                "value": "REELS"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        336,
+        80
+      ],
+      "id": "bf180d8b-1881-4bc8-b6ba-35a78c362c25",
+      "name": "Create container",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Y77guhd8D33XJKlV",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "={{ $('Edit Fields').item.json.node }}",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $('Edit Fields').item.json.Image_url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $('Edit Fields').item.json.caption }}"
+              },
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        80
+      ],
+      "id": "de383eab-43bb-41a2-a086-53949edb149c",
+      "name": "Request publish",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Y77guhd8D33XJKlV",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        320
+      ],
+      "id": "7572d62c-f5a1-4074-8c97-89ffdf10e7f8",
+      "name": "Wait",
+      "webhookId": "c67d2ecd-ea6d-40dc-9b2e-da5b1389aa4f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "82ace8b7-93ce-4031-a9f4-481d460e1814",
+              "leftValue": "={{ $json.status_code }}",
+              "rightValue": "IN_PROGRESS",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        784,
+        80
+      ],
+      "id": "558f216b-57b7-4844-ae50-24aff6f12dec",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "graphApiVersion": "v23.0",
+        "node": "={{ $json.id }}",
+        "edge": "=",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "fields",
+                "value": "status_code,status"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        560,
+        80
+      ],
+      "id": "30ca2fc2-ff1e-4f39-8ea4-7ae0d37325ca",
+      "name": "Poll container ready",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Y77guhd8D33XJKlV",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        304
+      ],
+      "id": "8a813bc0-6408-4297-a6c4-2ad6d139ecec",
+      "name": "Wait1",
+      "webhookId": "093bb562-34b7-434c-91d5-e7de1a940394"
+    },
+    {
+      "parameters": {
+        "command": "python -c \"from snake_sim.map_utils.general import get_maps_info; \\\nmaps_info = get_maps_info();\\\nimport json;\\\nprint(json.dumps(maps_info))\""
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -192
+      ],
+      "id": "f6a95275-ec50-48a9-948e-8fd32469c216",
+      "name": "Get map info from snake_sim"
+    },
+    {
+      "parameters": {
+        "jsCode": "let map_info = JSON.parse($input.first().json.stdout)\nlet maps_list = Object.keys(map_info)\n\nreturn [{snake_map: maps_list[Math.floor(Math.random() * maps_list.length)], map_info}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -192
+      ],
+      "id": "5c4574be-a1aa-498d-88a1-ac45297df266",
+      "name": "Parse map info"
+    },
+    {
+      "parameters": {
+        "command": "=python -m http.server {{ $json.port }} -d {{ $('run_args').item.json.store_dir }} >/tmp/http_server.log 2>&1 </dev/null &\necho $! > {{ $('run_args').item.json.store_dir }}/{{$json.server_pid_file}}\ncloudflared tunnel --url http://localhost:{{ $json.port }} > {{ $('run_args').item.json.store_dir }}/{{$json.cloudflared_log}} 2>&1 &\necho $! > {{ $('run_args').item.json.store_dir }}/{{$json.cloudflared_pid_file}}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        96
+      ],
+      "id": "58c88043-0f6e-4c9b-a443-53d829b7fc7a",
+      "name": "Start server and cloudflared"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "28157361-e566-4dcf-a1ae-8df5036cf277",
+              "leftValue": "={{ $json.cloudflare_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -144,
+        96
+      ],
+      "id": "c7217d67-de70-4c42-9c7e-f05a9ad8ac25",
+      "name": "If url"
+    },
+    {
+      "parameters": {
+        "command": "=kill $(cat {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.server_pid_file }})\nkill $(cat {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.cloudflared_pid_file }})"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        224,
+        592
+      ],
+      "id": "94c7dba3-03b6-4096-ad02-83b330cc5705",
+      "name": "Stop cloudflare and server"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03c7cdbb-1f11-4eae-94c3-eba7b767254d",
+              "name": "cloudflared_log",
+              "value": "cloudflared.log",
+              "type": "string"
+            },
+            {
+              "id": "6e437c83-72e1-477f-9ac0-79c9baf64c44",
+              "name": "server_pid_file",
+              "value": "http_server.pid",
+              "type": "string"
+            },
+            {
+              "id": "8f4c5134-3a1b-45ed-aa5a-9378675237a8",
+              "name": "cloudflared_pid_file",
+              "value": "cloudflared.pid",
+              "type": "string"
+            },
+            {
+              "id": "2a27078d-ab18-4f25-a482-5499056f3759",
+              "name": "port",
+              "value": "8989",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -992,
+        96
+      ],
+      "id": "b9cdc8fe-7138-46cb-9089-af691bfabdd0",
+      "name": "tunnel args"
+    },
+    {
+      "parameters": {
+        "command": "=grep -o 'https://[a-z0-9-]*\\.trycloudflare\\.com' {{ $('run_args').item.json.store_dir }}/{{$('tunnel args').item.json.cloudflared_log}} || true"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        96
+      ],
+      "id": "fc987b27-cdb1-4298-bf78-a288bcedfe5f",
+      "name": "grep for url"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{cloudflare_url: $input.first().json.stdout}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        96
+      ],
+      "id": "5e4fa989-b81b-4968-adc8-123d4fc0a14b",
+      "name": "Check cloudflare url"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "59998035-24d2-4b02-a33f-37dbb6d0ce5f",
+              "leftValue": "={{ $json.status_code }}",
+              "rightValue": "ERROR",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1008,
+        64
+      ],
+      "id": "d089df85-5015-442d-a135-49aae9639590",
+      "name": "got error"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get map info from snake_sim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "run_args": {
+      "main": [
+        [
+          {
+            "node": "Compute run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute run": {
+      "main": [
+        [
+          {
+            "node": "Analyze run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create run video": {
+      "main": [
+        [
+          {
+            "node": "Make IG video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze run": {
+      "main": [
+        [
+          {
+            "node": "Parse run analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse run analysis": {
+      "main": [
+        [
+          {
+            "node": "Create run video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make IG video": {
+      "main": [
+        [
+          {
+            "node": "tunnel args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create container": {
+      "main": [
+        [
+          {
+            "node": "Poll container ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request publish": {
+      "main": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "got error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Poll container ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll container ready": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "grep for url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get map info from snake_sim": {
+      "main": [
+        [
+          {
+            "node": "Parse map info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse map info": {
+      "main": [
+        [
+          {
+            "node": "run_args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start server and cloudflared": {
+      "main": [
+        [
+          {
+            "node": "grep for url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If url": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tunnel args": {
+      "main": [
+        [
+          {
+            "node": "Start server and cloudflared",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "grep for url": {
+      "main": [
+        [
+          {
+            "node": "Check cloudflare url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check cloudflare url": {
+      "main": [
+        [
+          {
+            "node": "If url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "got error": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Request publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dc22de8d-9165-4a25-9756-21780dae8030",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "46520e05019fb3885f7fc2f77e8cf30de586824cb7291de741afc119467023f0"
+  },
+  "id": "BJmb83UCCPW6NJuK",
+  "tags": []
+}

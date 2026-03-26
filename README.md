@@ -1,0 +1,1 @@
+cd to repo root and run "docker compose up --build"
