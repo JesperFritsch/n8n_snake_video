@@ -13,13 +13,12 @@ services:
       - N8N_PROTOCOL=http
       - N8N_USER_FOLDER=/home/node/
       - NODES_EXCLUDE=[]
-  
-    command: > 
+    entrypoint: >
       sh -c "
-      n8n import:workflow --input=/home/node/snake_vid_flow.json || true;
+      pip install --break-system-packages --no-deps git+https://github.com/JesperFritsch/snake_sim.git --force-reinstall --quiet &&
+      n8n import:workflow --input=/home/node/snake_vid_flow.json || true &&
       n8n
       "
-
 
 volumes:
   n8n_data:
