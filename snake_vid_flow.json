@@ -178,7 +178,7 @@
     },
     {
       "parameters": {
-        "command": "=ffmpeg -y \\\n  -i {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.video_name }} \\\n  -filter_complex \"[0:v]fps=30,scale=960:1760:force_original_aspect_ratio=decrease,split[fg][halo_src];[halo_src]format=rgba,lutrgb=r=0:g=0:b=0,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lt(X,40)*lt(Y,40),if(lte(hypot(X-40,Y-40),40),255,0),if(gt(X,W-41)*lt(Y,40),if(lte(hypot(X-(W-41),Y-40),40),255,0),if(lt(X,40)*gt(Y,H-41),if(lte(hypot(X-40,Y-(H-41)),40),255,0),if(gt(X,W-41)*gt(Y,H-41),if(lte(hypot(X-(W-41),Y-(H-41)),40),255,0),255))))',pad=iw+60:ih+60:30:30:color=black@0,boxblur=luma_radius=0:luma_power=0:chroma_radius=0:chroma_power=0:alpha_radius=30:alpha_power=1[halo];color=c=0x2b2b2b:s=1080x1920:r=30[bg];[bg][halo]overlay=(W-w)/2:(H-h)/2:shortest=1[bg2];[bg2][fg]overlay=(W-w)/2:(H-h)/2:shortest=1,format=yuv420p[v]\" \\\n  -map \"[v]\" \\\n  -an \\\n  -c:v libx264 \\\n  -profile:v high \\\n  -level:v 4.1 \\\n  -crf 18 \\\n  -preset medium \\\n  {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.final_video_name }}"
+        "command": "=ffmpeg -y \\\n  -i {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.video_name }} \\\n  -filter_complex \"[0:v]fps=30,scale=960:1760:force_original_aspect_ratio=decrease,split[fg][shadow_src];[shadow_src]format=rgba,geq=r=0:g=0:b=0:a=255,pad=iw+80:ih+80:40:40:color=black@0,boxblur=luma_radius=0:luma_power=0:chroma_radius=0:chroma_power=0:alpha_radius=25:alpha_power=1[shadow];color=c=0x2b2b2b:s=1080x1920:r=30[bg];[bg][shadow]overlay=(W-w)/2:(H-h)/2:shortest=1[bg2];[bg2][fg]overlay=(W-w)/2:(H-h)/2:shortest=1,format=yuv420p[v]\" \\\n  -map \"[v]\" \\\n  -an \\\n  -c:v libx264 \\\n  -profile:v high \\\n  -level:v 4.1 \\\n  -crf 23 \\\n  -preset ultrafast \\\n  {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.final_video_name }}"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -621,8 +621,8 @@
       "name": "Message a model",
       "credentials": {
         "anthropicApi": {
-          "id": "lItpTZ4RIbY4EcGP",
-          "name": "Anthropic account"
+          "id": "56zpI3NNpORh5TWW",
+          "name": "Anthropic account 2"
         }
       }
     }
@@ -942,7 +942,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "61bc32ac-95b5-4d1f-b0d2-c209c4cea56b",
+  "versionId": "e2592712-f2a6-4d68-a9e0-2de706d003ce",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "9fe4f737b5da45501e6c3b4cd9a685b4841781e5652972f4bcb7c67afa778b3f"
