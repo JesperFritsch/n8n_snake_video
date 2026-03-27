@@ -6,10 +6,10 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        64,
-        -48
+        0,
+        0
       ],
-      "id": "d606075f-4d84-43f9-8c72-e772ebf95b8a",
+      "id": "0d7c726a-23b6-43e2-bc09-d6d13817fb16",
       "name": "When clicking ‘Execute workflow’"
     },
     {
@@ -19,13 +19,13 @@
             {
               "id": "cd3f4146-f3b6-4fa3-a1fc-906c7f3e2219",
               "name": "=video_url",
-              "value": "={{ $json.cloudflare_url }}/{{ $('run_args').item.json.final_video_name }}",
+              "value": "={{ $('If url').item.json.cloudflare_url }}/{{ $('run_args').item.json.final_video_name }}",
               "type": "string"
             },
             {
               "id": "0d693853-3906-456a-9e3f-176b4c3ef122",
               "name": "caption",
-              "value": "={{ $json.text }}",
+              "value": "={{ $json.content[0].text.replace(/^[\"']|[\"']$/g, ''); }}",
               "type": "string"
             },
             {
@@ -41,10 +41,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -32,
-        816
+        -96,
+        864
       ],
-      "id": "c2bee9c6-1ebd-4f04-bb58-e0d4aef85ebb",
+      "id": "18844bdc-7e75-431b-b975-a3c79be880fc",
       "name": "Edit Fields"
     },
     {
@@ -108,7 +108,7 @@
             {
               "id": "cdf7e449-926e-425f-b146-43576070ce8a",
               "name": "snake_food",
-              "value": "={{ Math.round($json.map_info[$json.snake_map].height * $json.map_info[$json.snake_map].width * 0.009) }}",
+              "value": "={{ Math.round($json.map_info[$json.snake_map].height * $json.map_info[$json.snake_map].width * 0.009)}}",
               "type": "number"
             }
           ]
@@ -118,10 +118,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        624,
-        -48
+        560,
+        0
       ],
-      "id": "1c0fc66e-9597-4990-b5cb-f80c2216105a",
+      "id": "5d02ccc6-218c-4dbe-a40d-6209d3a15045",
       "name": "run_args"
     },
     {
@@ -131,10 +131,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        864,
-        -48
+        800,
+        0
       ],
-      "id": "035d29f5-ff2c-49c6-acb0-ceaa7fd1b6a5",
+      "id": "a5a8255d-a9d0-47c2-90b9-2b9a908a3757",
       "name": "Compute run"
     },
     {
@@ -144,36 +144,36 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        80,
-        144
+        16,
+        192
       ],
-      "id": "92c05cd2-6093-46d7-8a11-079094666e93",
+      "id": "c25f7aaa-c331-44ea-ba0c-6d1267721876",
       "name": "Create run video"
     },
     {
       "parameters": {
-        "command": "=python -m snake_sim.analyze.scripts.run_analyzer {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.run_file }}"
+        "command": "=python -m snake_sim.analyze.scripts.run_analyzer {{ $('run_args').item.json.store_dir }}/{{ $('run_args').item.json.run_file }} --dump-json"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        1072,
-        -48
+        1008,
+        0
       ],
-      "id": "67547a24-e0b6-4fbe-8694-f8267cb0c0bc",
+      "id": "8b574c6f-983f-4e0e-9328-967eb340b43e",
       "name": "Analyze run"
     },
     {
       "parameters": {
-        "jsCode": "const parsed = JSON.parse($input.first().json.stdout);\nconst analysis = Array.isArray(parsed) ? parsed[0] : parsed;\n\nconst nrOfSteps = Number($('run_args').first().json.nr_of_steps);\nconst snakeIds = (analysis.snake_ids ?? []).map(String);\nconst fatalStepsObj = analysis.fatal_steps ?? {};\nconst enteredSeparateArea = analysis.entered_separate_area ?? {};\nconst tailVisiblePhases = analysis.tail_visible_phases ?? {};\n\nlet video_end_step;\n\n// Multiple snakes\nif (snakeIds.length > 1) {\n  const fatalSteps = Object.values(fatalStepsObj)\n    .map(Number)\n    .filter(Number.isFinite)\n    .sort((a, b) => a - b);\n\n  if (fatalSteps.length >= snakeIds.length) {\n    // All snakes died -> one snake left after the second highest fatal step\n    video_end_step = fatalSteps[fatalSteps.length - 2] + 50;\n  } else if (fatalSteps.length > 0) {\n    // Last snake never died -> one snake left after the highest fatal step\n    video_end_step = fatalSteps[fatalSteps.length - 1] + 50;\n  } else {\n    // No deaths at all -> fallback\n    video_end_step = Number(analysis.final_step_idx ?? 0);\n  }\n} else {\n  // Single snake\n  const snakeId = snakeIds[0] ?? \"0\";\n  const lastEnteredSeparateAreaStep = Math.max(\n    -Infinity,\n    ...(enteredSeparateArea[snakeId] ?? []).map(Number).filter(Number.isFinite)\n  );\n\n  const phases = tailVisiblePhases[snakeId] ?? [];\n\n  const matchingPhase = phases.find(\n    (p) =>\n      p.tail_visible === true &&\n      Number.isFinite(Number(p.start_step_idx)) &&\n      Number(p.start_step_idx) > lastEnteredSeparateAreaStep\n  );\n\n  if (matchingPhase) {\n    video_end_step = Number(matchingPhase.start_step_idx) + 50;\n  } else {\n    // Fallback if no such phase exists\n    video_end_step = Number(analysis.final_step_idx ?? 0);\n  }\n}\n\nlet video_start_step = video_end_step - nrOfSteps;\nif (video_start_step < 0) {\n  video_start_step = 0;\n  // if start steps is 0 then we should not finish the video at the calculated end step\n  video_end_step = nrOfSteps;\n}\n\n\nreturn [\n  {\n    json: {\n      ...analysis,\n      video_start_step,\n      video_end_step,\n    },\n  },\n];"
+        "jsCode": "const parsed = JSON.parse($input.first().json.stdout);\nconst analysis = Array.isArray(parsed) ? parsed[0] : parsed;\n\nconst nrOfSteps = Number($('run_args').first().json.nr_of_steps);\nconst snakeIds = (analysis.snake_ids ?? []).map(String);\nconst fatalStepsObj = analysis.fatal_steps ?? {};\nconst enteredSeparateArea = analysis.entered_separate_area ?? {};\nconst tailVisiblePhases = analysis.tail_visible_phases ?? {};\nconst traps_mapping = analysis.traps_mapping ?? {};\nconst total_traps_made = {};\n\nfor (const traps of Object.values(traps_mapping)) {\n  for (const trap of traps) {\n    for (const id of trap.trapping_ids) {\n      if (total_traps_made[id]){\n        total_traps_made[id] += 1\n      } \n      else {\n        total_traps_made[id] = 1\n      }\n    }\n  }\n}\n\nlet video_end_step;\n\n// Multiple snakes\nif (snakeIds.length > 1) {\n  const fatalSteps = Object.values(fatalStepsObj)\n    .map(Number)\n    .filter(Number.isFinite)\n    .sort((a, b) => a - b);\n\n  if (fatalSteps.length >= snakeIds.length) {\n    // All snakes died -> one snake left after the second highest fatal step\n    video_end_step = fatalSteps[fatalSteps.length - 2] + 50;\n  } else if (fatalSteps.length > 0) {\n    // Last snake never died -> one snake left after the highest fatal step\n    video_end_step = fatalSteps[fatalSteps.length - 1] + 50;\n  } else {\n    // No deaths at all -> fallback\n    video_end_step = Number(analysis.final_step_idx ?? 0);\n  }\n} else {\n  // Single snake\n  const snakeId = snakeIds[0] ?? \"0\";\n  const lastEnteredSeparateAreaStep = Math.max(\n    -Infinity,\n    ...(enteredSeparateArea[snakeId] ?? []).map(Number).filter(Number.isFinite)\n  );\n\n  const phases = tailVisiblePhases[snakeId] ?? [];\n\n  const matchingPhase = phases.find(\n    (p) =>\n      p.tail_visible === true &&\n      Number.isFinite(Number(p.start_step_idx)) &&\n      Number(p.start_step_idx) > lastEnteredSeparateAreaStep\n  );\n\n  if (matchingPhase) {\n    video_end_step = Number(matchingPhase.start_step_idx) + 50;\n  } else {\n    // Fallback if no such phase exists\n    video_end_step = Number(analysis.final_step_idx ?? 0);\n  }\n}\n\nlet video_start_step = video_end_step - nrOfSteps;\nif (video_start_step < 0) {\n  video_start_step = 0;\n  // if start steps is 0 then we should not finish the video at the calculated end step\n  video_end_step = nrOfSteps;\n}\n\n\nreturn [\n  {\n    json: {\n      ...analysis,\n      video_start_step,\n      video_end_step,\n      total_traps_made\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1312,
-        -48
+        1248,
+        0
       ],
-      "id": "b3be89e9-5083-481c-bbd2-4608dfddc496",
+      "id": "6c98685a-a7c8-4690-a0ba-d5d255de9d59",
       "name": "Parse run analysis"
     },
     {
@@ -183,10 +183,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        704,
-        144
+        640,
+        192
       ],
-      "id": "cc4447e8-7d33-4f33-8ad4-798692abc9c4",
+      "id": "c35ac2c7-d848-4630-9b29-87d12cde9901",
       "name": "Make IG video"
     },
     {
@@ -221,14 +221,14 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        224,
-        816
+        160,
+        864
       ],
-      "id": "98fe10d7-d7f0-4362-8c61-f30483b94df4",
+      "id": "eb2922e4-07e4-4456-9636-e19ffcdb5bcf",
       "name": "Create container",
       "credentials": {
         "facebookGraphApi": {
-          "id": "f0NVZHzJ3RJTYa7z",
+          "id": "Uvf6g6leD9RyPVpl",
           "name": "Facebook Graph account"
         }
       }
@@ -261,14 +261,14 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        1280,
-        816
+        1216,
+        864
       ],
-      "id": "01c11543-801f-404a-b500-a8605b3e1736",
+      "id": "d45ddec6-fba4-4842-9043-53efb5bc0ba2",
       "name": "Request publish",
       "credentials": {
         "facebookGraphApi": {
-          "id": "f0NVZHzJ3RJTYa7z",
+          "id": "Uvf6g6leD9RyPVpl",
           "name": "Facebook Graph account"
         }
       }
@@ -278,10 +278,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        608,
-        1152
+        544,
+        1200
       ],
-      "id": "92b2b5cc-e93c-429e-a26f-0d8681f4db22",
+      "id": "9853a4a7-d455-4885-8be7-dcd79d849221",
       "name": "Wait",
       "webhookId": "c67d2ecd-ea6d-40dc-9b2e-da5b1389aa4f"
     },
@@ -312,10 +312,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        720,
-        816
+        656,
+        864
       ],
-      "id": "d64e700b-3901-4a88-bb46-3a34fba8f226",
+      "id": "436b616a-3c9a-4f6d-8e39-8e9163fa2fff",
       "name": "If"
     },
     {
@@ -337,14 +337,14 @@
       "type": "n8n-nodes-base.facebookGraphApi",
       "typeVersion": 1,
       "position": [
-        496,
-        816
+        432,
+        864
       ],
-      "id": "75631305-e364-4666-8699-0339ab14f640",
+      "id": "2285729b-5ca5-4f63-b71e-a017bc321672",
       "name": "Poll container ready",
       "credentials": {
         "facebookGraphApi": {
-          "id": "f0NVZHzJ3RJTYa7z",
+          "id": "Uvf6g6leD9RyPVpl",
           "name": "Facebook Graph account"
         }
       }
@@ -356,10 +356,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        928,
-        576
+        864,
+        624
       ],
-      "id": "0630385a-c9b1-4c7c-936a-741fabee9f4d",
+      "id": "c30c5877-3381-41a4-b58e-ca6744f56bdf",
       "name": "Wait1",
       "webhookId": "093bb562-34b7-434c-91d5-e7de1a940394"
     },
@@ -370,10 +370,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        272,
-        -48
+        208,
+        0
       ],
-      "id": "baad187a-0d20-41ac-91fd-7df2ded4224d",
+      "id": "53fc5b9c-cb58-49cd-a2eb-374b53e89939",
       "name": "Get map info from snake_sim"
     },
     {
@@ -383,23 +383,23 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        448,
-        -48
+        384,
+        0
       ],
-      "id": "2a63b694-4e0f-421c-bd23-1fccbd49df97",
+      "id": "08a4e683-be33-4372-b93b-0526ac8c8c43",
       "name": "Parse map info"
     },
     {
       "parameters": {
-        "command": "=SERVER_LOG=\"{{ $('run_args').item.json.store_dir }}/caddy-$(date +%s).log\"\necho \"THIS IS THE CADDY NODE\" > \"$SERVER_LOG\"\necho \"PID $$\" >> \"$SERVER_LOG\"\necho \"PORT {{ $('tunnel args').item.json.port }}\" >> \"$SERVER_LOG\"\nwhich caddy >> \"$SERVER_LOG\" 2>&1\ncaddy version >> \"$SERVER_LOG\" 2>&1\n\ncaddy file-server \\\n  --root {{ $('run_args').item.json.store_dir }} \\\n  --listen :{{ $('tunnel args').item.json.port }} \\\n  >>\"$SERVER_LOG\" 2>&1 </dev/null &\necho $! > {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.server_pid_file }}\n\ncloudflared tunnel --url http://localhost:{{ $('tunnel args').item.json.port }} > {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.cloudflared_log }} 2>&1 </dev/null &\necho $! > {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.cloudflared_pid_file }}\n\necho \"$SERVER_LOG\" > {{ $('run_args').item.json.store_dir }}/last_caddy_log.txt"
+        "command": "=\ncaddy file-server \\\n  --root {{ $('run_args').item.json.store_dir }} \\\n  --listen :{{ $('tunnel args').item.json.port }} \\\n  > {{$('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.http_server_log }} 2>&1 </dev/null &\necho $! > {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.server_pid_file }}\n\n\ncloudflared tunnel --url http://localhost:{{ $('tunnel args').item.json.port }} > {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.cloudflared_log }} 2>&1 </dev/null &\necho $! > {{ $('run_args').item.json.store_dir }}/{{ $('tunnel args').item.json.cloudflared_pid_file }}\n"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        512,
-        352
+        448,
+        400
       ],
-      "id": "943a74d9-3e46-4190-bf8c-0284f9c1615b",
+      "id": "23d25cf0-7fb8-40a7-a9e7-ea94c2e2a550",
       "name": "Start server and cloudflared"
     },
     {
@@ -430,10 +430,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1168,
-        352
+        1104,
+        400
       ],
-      "id": "f6492c52-68ae-44cd-9718-e941aaf93758",
+      "id": "56ab69c6-a6c6-4754-adb7-77e079150218",
       "name": "If url"
     },
     {
@@ -443,10 +443,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        1488,
-        784
+        1440,
+        832
       ],
-      "id": "46953008-9b04-47fc-b41e-80094826bae8",
+      "id": "92980a11-c8bd-4393-96aa-327c36701447",
       "name": "Stop cloudflare and server"
     },
     {
@@ -490,10 +490,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        112,
-        352
+        48,
+        400
       ],
-      "id": "4fc6b03e-6626-448a-a634-1b69ba11b79f",
+      "id": "26edf01f-0b43-4ceb-989e-8846e1c3882c",
       "name": "tunnel args"
     },
     {
@@ -503,10 +503,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        720,
-        352
+        656,
+        400
       ],
-      "id": "e523fd72-1517-4dd4-a9d8-5204c0239f2f",
+      "id": "56d9d0f4-16c7-4434-a993-ba63ff58b2f4",
       "name": "grep for url"
     },
     {
@@ -516,10 +516,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        944,
-        352
+        880,
+        400
       ],
-      "id": "69fccc97-97b4-4f42-b79b-f9fb4c0fe515",
+      "id": "a844076a-2569-4896-a5e2-a611b70a9e9f",
       "name": "Check cloudflare url"
     },
     {
@@ -549,10 +549,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        976,
-        800
+        912,
+        848
       ],
-      "id": "896e0413-2348-488a-a2f3-c0434c36e6e0",
+      "id": "d603961e-76b3-4159-8d9e-cd02ce1c9962",
       "name": "got error"
     },
     {
@@ -562,10 +562,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        288,
-        144
+        224,
+        192
       ],
-      "id": "414a5ba2-c03f-4346-801a-633a151413c2",
+      "id": "fd5eabd6-7a19-4963-b9a8-76632c45f117",
       "name": "read video json"
     },
     {
@@ -575,46 +575,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        496,
-        144
+        432,
+        192
       ],
-      "id": "b9ec524e-ea2c-41d7-a16d-996783495ed3",
+      "id": "f7a393b9-8e48-4844-baa1-d142815fc704",
       "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=You are going to write a caption for an instagram reel, the reel shows one or multiple snake agents running autonomously on a grid. i need you to write a short caption. here is some information about the run: \nsnake_colors:  {{ JSON.stringify($('Code in JavaScript').item.json.snake_colors) }},\ngrid_height: {{ $('Parse run analysis').item.json.env_meta_data.height }},\ngrid_width: {{ $('Parse run analysis').item.json.env_meta_data.width }},\nfinal_steps: {{ $('Parse run analysis').item.json.fatal_steps }}\nsnake_ids: {{ $('Parse run analysis').item.json.snake_ids }},\nnumber_of_snakes: {{ $('Parse run analysis').item.json.snake_ids.length }},\nvideo_start_step: {{ $('Parse run analysis').item.json.video_start_step }}\nvideo_end_step: {{ $('Parse run analysis').item.json.video_end_step }}\nentered_separate_area: {{ JSON.stringify($('Parse run analysis').item.json.entered_separate_area) }}\ntail_visible_phases: {{ JSON.stringify($('Parse run analysis').item.json.tail_visible_phases) }}\n\n\"snake_colors\" explains it self, the list is RGB values,  it is the color of the snakes, this is what the viewers will see, so if you refer to some snake dont refer to it by id, refer to it by the name of the body_color, you need to be as precise as you can with the color description, you can use emojies for helping describe the color, if the emoji color matches well with the snakes body color.\n\n\"final_steps\" is the final step for each snake, the step where it dies. also do not refer to any events by step because the viewers has no idea what step is what, instead refer to events by figuring out where in between \"video_start_step\" and \"video_end_step\" the event occured. \nand also dont refer to any events that occured outside of the \"video_start_step\" and \"video_end_step\" range because those will not be included in the reel.\n\n\"entered_separate_area\" is steps where a snake entered an area where it can not see any part of its own body, it means that the snake has to fit its whole body inside that are a to survive.\n\n\"tail_visible_phases\" are the ranges of steps for each snake where it either can see its own tail, meaning it is guaranteed to be able to stay alive, and where it can not see its tail, which does not mean that it is a guaranteed death but it needs to find the right path. but dont mention the tail beeing visible or not, just use the information to understand if something interesting is happening.\n\nwrite a simple caption. you can use emojies\n\nremember the viewers can only see a video of some snakes going around, they dont know anything about steps or snake ids. and finally dont mention anything about what i have said to you, just simply respond with the caption.\n\nyou can add some relevant hashtags targeting programming, python, algorithms, automated agents and such. but dont go crazy, i dont want hashtags that has nothing to do with this \n\ndont mention anything about, that the snake needs to fit or anything, just describe whats happening in a vague way\n\nWhen there is only one snake then you can make the description shorter and less about what happens.\n\n1 snake: max 100 word\n>1 snake: max 250 words",
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.9,
-      "position": [
-        1408,
-        336
-      ],
-      "id": "4a3c1f9d-898a-4d73-b164-10328f5f26f4",
-      "name": "Basic LLM Chain"
-    },
-    {
-      "parameters": {
-        "model": "llama-3.3-70b-versatile",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
-      "typeVersion": 1,
-      "position": [
-        1408,
-        512
-      ],
-      "id": "db32a34e-0af0-4de6-8c08-fbb0f91adff8",
-      "name": "Groq Chat Model",
-      "credentials": {
-        "groqApi": {
-          "id": "Z886l70jllyhasl8",
-          "name": "Groq account"
-        }
-      }
     },
     {
       "parameters": {
@@ -623,11 +588,43 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        320,
-        352
+        256,
+        400
       ],
-      "id": "c8f2b7b4-9d2e-4086-b0cc-61aeddb8630c",
+      "id": "7a6959dd-3d24-45f3-a359-80f2b355c7e9",
       "name": "Kill any listening on port"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-opus-4-6",
+          "mode": "list",
+          "cachedResultName": "claude-opus-4-6"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=ROLE:\nYou write short, engaging Instagram Reel captions for videos of autonomous snake agents competing on a grid.\n \nRULES:\n- Viewers only see colored snakes moving on a grid. They know nothing about steps, IDs, or game internals.\n- NEVER include any of the analysis in the reponse.\n- Only include the actual caption in the response.\n- NEVER mention step numbers, snake IDs, or grid dimensions.\n- NEVER mention that a snake does not see its own tail.\n- Refer to snakes by their body_color or name. Match the RGB values to the most precise color name you can (e.g. [153,0,61] = \"crimson\", [0,153,122] = \"teal\", [122,153,0] = \"olive green\"). Use an emoji ONLY if it closely matches the body color.\n- To describe WHEN something happens, calculate where the step falls between video_start_step and video_end_step as a percentage, then use natural language: 0-10% = \"right away\", 10-25% = \"early on\", 25-50% = \"in the first half\", 50-75% = \"in the second half\", 75-100% = \"near the end\".\n- IGNORE any events with steps outside the video_start_step to video_end_step range.\n- Do NOT list every snake. Only mention a snake if it is the winner, dies first, dies last, or is involved in a notable trap.\n- If 1 snake: max 50 words, keep it short and simple.\n- If more than 1 snake: max 300 words depending on how much was going on, but try to keep it short.\n- End with a few relevant hashtags (programming, python, algorithms, AI agents, simulation). No unrelated hashtags.\n \nUNDERSTANDING THE DATA:\n \nsnake_colors: Maps snake ID to head_color and body_color as RGB arrays. Use body_color for identification.\n \nfinal_steps: Maps snake ID to the step where it dies. A snake NOT in this list survived the entire video. This is how you determine the winner (last alive) and death order.\n \nentered_separate_area: Maps snake ID to steps where it entered a zone where it cannot see its own tail. The snake must fit entirely inside that zone to survive, but dont focus to much on this data, just use it to figure out what happens in the simulation.\n \ntrapps_made: Maps a step number to a list of trap events. Each trap event has:\n  - trapped_ids: snakes that got cornered (their available space was cut off)\n  - trapping_ids: snakes that did the cornering\nA trap does NOT always mean death. Cross-reference with tail_visible_phases to verify.\n \ntail_visible_phases: Maps snake ID to a timeline of phases where tail_visible is true or false. If a trapped snake later has tail_visible = true phase, it escaped the trap. Use this to avoid claiming a snake died from a trap it actually survived.\nbut dont focus to much on this data, just use it to figure out what happens in the simulation. not seeing its own tail does not mean that it is blind.\n \ntotal_traps_made: Maps snake ID to how many traps it executed.\n \nANALYSIS STEPS (do these before writing):\n1. Identify the winner: which snake ID is NOT in final_steps? If all died, the last to die is the \"winner\".\n2. Build death order from final_steps, sorted by step value.\n3. For each trap in trapps_made, check if the trapped snake actually died by checking final_steps and tail_visible_phases.\n4. Note the most interesting events: first death, biggest trapper, any escapes, final showdown.\n5. Convert all step references to relative timing words.\n6. Write the caption using color names or names you made up, but then make it clear which color has what name, never IDs or steps.\n \nEXAMPLE OUTPUT (for reference tone and style):\n\"15 snakes enter, one survives. 🟢 The teal snake plays it cool early while chaos erupts around it — crimson gets boxed in right away and the dark orange snake follows shortly after. Midway through, teal strikes, cornering the navy snake in a deadly squeeze. But the real showdown comes near the end: olive green vs teal, battling for every last square until teal clinches it 🏆\n \n#Python #AlgorithmDesign #AutonomousAgents #SnakeAI #Simulation #GameDev\"\n \n---\n \nDATA FOR THIS RUN:\n \nsnake_colors: {{ JSON.stringify($('Code in JavaScript').item.json.snake_colors) }}\ngrid_height: {{ $('Parse run analysis').item.json.env_meta_data.height }}\ngrid_width: {{ $('Parse run analysis').item.json.env_meta_data.width }}\nfinal_steps: {{ JSON.stringify($('Parse run analysis').item.json.fatal_steps) }}\nsnake_ids: {{ $('Parse run analysis').item.json.snake_ids }}\nnumber_of_snakes: {{ $('Parse run analysis').item.json.snake_ids.length }}\nvideo_start_step: {{ $('Parse run analysis').item.json.video_start_step }}\nvideo_end_step: {{ $('Parse run analysis').item.json.video_end_step }}\nentered_separate_area: {{ JSON.stringify($('Parse run analysis').item.json.entered_separate_area) }}\ntrapps_made: {{ JSON.stringify($('Parse run analysis').item.json.traps_mapping) }}\ntotal_traps_made: {{ JSON.stringify($('Parse run analysis').item.json.total_traps_made) }}\ntail_visible_phases: {{ JSON.stringify($('Parse run analysis').item.json.tail_visible_phases) }}\n \nNow write the caption."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        384
+      ],
+      "id": "082046fb-b75e-45d0-b641-7f462ef10088",
+      "name": "Message a model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "lItpTZ4RIbY4EcGP",
+          "name": "Anthropic account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -819,7 +816,7 @@
       "main": [
         [
           {
-            "node": "Basic LLM Chain",
+            "node": "Message a model",
             "type": "main",
             "index": 0
           }
@@ -917,38 +914,22 @@
         ]
       ]
     },
-    "Stop cloudflare and server": {
-      "main": [
-        []
-      ]
-    },
-    "Groq Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Basic LLM Chain",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Basic LLM Chain": {
+    "Kill any listening on port": {
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Start server and cloudflared",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Kill any listening on port": {
+    "Message a model": {
       "main": [
         [
           {
-            "node": "Start server and cloudflared",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
@@ -961,11 +942,11 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "78b3cb39-0fec-46cc-80ae-f3fd6a70b17f",
+  "versionId": "61bc32ac-95b5-4d1f-b0d2-c209c4cea56b",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "7938c18b212919e9e1bb0c21f15b96b81795b06368a43ca88ea4480a646e78bf"
+    "instanceId": "9fe4f737b5da45501e6c3b4cd9a685b4841781e5652972f4bcb7c67afa778b3f"
   },
-  "id": "huAotcMiAxbrPU7P",
+  "id": "ejY1esEG3vazr6Uy",
   "tags": []
 }
