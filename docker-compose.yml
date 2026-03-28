@@ -7,6 +7,7 @@ services:
       - n8n_data:/home/node/.n8n
       - ./n8n_output:/root/.n8n-files
       - ./snake_vid_flow.json:/home/node/snake_vid_flow.json
+      - ./audio:/home/node/audio
     environment:
       - N8N_HOST=localhost
       - N8N_PORT=5678
