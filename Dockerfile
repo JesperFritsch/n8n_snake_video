@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     libsdl2-mixer-dev \
     libsdl2-image-dev \
     libfreetype6-dev \
+    util-linux\
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
