@@ -9,13 +9,17 @@ services:
       - ./snake_vid_flow.json:/home/node/snake_vid_flow.json
       - ./audio:/home/node/audio
     environment:
-      - N8N_HOST=localhost
+      - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
+      - N8N_PROTOCOL=https
+      - N8N_SSL_KEY=/home/node/certs/key.pem
+      - N8N_SSL_CERT=/home/node/certs/cert.pem
       - N8N_USER_FOLDER=/home/node/
       - NODES_EXCLUDE=[]
     entrypoint: >
       sh -c "
+      mkdir -p /home/node/certs &&
+      [ -f /home/node/certs/key.pem ] || openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /home/node/certs/key.pem -out /home/node/certs/cert.pem -subj '/CN=n8n.local' &&
       pip install --break-system-packages git+https://github.com/JesperFritsch/snake_sim.git --force-reinstall --quiet &&
       n8n import:workflow --input=/home/node/snake_vid_flow.json || true &&
       n8n
