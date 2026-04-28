@@ -8,6 +8,7 @@ services:
       - ./n8n_output:/root/.n8n-files
       - ./snake_vid_flow.json:/home/node/snake_vid_flow.json
       - ./audio:/home/node/audio
+      - ~/.cloudflared:/root/.cloudflared:ro
     environment:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
