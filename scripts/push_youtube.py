@@ -34,9 +34,9 @@ def push_to_youtube(video_path, title, description):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Upload a video to YouTube.')
-    parser.add_argument('video_path', help='Path to the video file')
-    parser.add_argument('title', help='Title of the YouTube video')
-    parser.add_argument('description', help='Description of the YouTube video')
+    parser.add_argument('-v', '--video_path', help='Path to the video file')
+    parser.add_argument('-t', '--title', help='Title of the YouTube video')
+    parser.add_argument('-d', '--description', help='Description of the YouTube video')
 
     args = parser.parse_args()
     push_to_youtube(args.video_path, args.title, args.description)
