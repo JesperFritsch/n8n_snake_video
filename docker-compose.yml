@@ -7,6 +7,7 @@ services:
       - n8n_data:/home/node/.n8n
       - ./n8n_output:/root/.n8n-files
       - ./snake_vid_flow.json:/home/node/snake_vid_flow.json
+      - ./scripts:/home/node/scripts
       - ./audio:/home/node/audio
       - /home/jesper/.cloudflared:/root/.cloudflared:ro
     environment:
@@ -22,6 +23,7 @@ services:
       mkdir -p /home/node/certs &&
       [ -f /home/node/certs/key.pem ] || openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /home/node/certs/key.pem -out /home/node/certs/cert.pem -subj '/CN=n8n.local' &&
       pip install --break-system-packages git+https://github.com/JesperFritsch/snake_sim.git --force-reinstall &&
+      pip install --upgrade google-api-python-client google-auth-oauthlib &&
       n8n import:workflow --input=/home/node/snake_vid_flow.json || true &&
       n8n
       "
